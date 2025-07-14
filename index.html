@@ -222,7 +222,13 @@
           class="mt-4 px-6 py-2 bg-purple-800 border border-purple-500 rounded shadow text-purple-300 transition opacity-50 cursor-not-allowed"
           disabled
         >
-          ✨ Prestige (Reset +50 % prod)
+          ✨ Prestige (Reset +1 PP)
+        </button>
+        <button
+          id="openPerkShop"
+          class="mt-4 px-6 py-2 bg-purple-800 border border-purple-500 rounded shadow text-purple-300 transition"
+        >
+          🛒 Boutique Prestige
         </button>
       </section>
 
@@ -243,6 +249,7 @@
       </section>
     </main>
 
+    <!-- Strategy Modal -->
     <div
       id="strategyModal"
       class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50"
@@ -274,6 +281,26 @@
             💥 Risky - 150% reward, 50% succès
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Perk Shop Modal -->
+    <div
+      id="perkModal"
+      class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50"
+    >
+      <div
+        class="bg-black border border-purple-600 rounded p-6 w-full max-w-sm text-purple-300"
+      >
+        <h3 class="text-xl mb-4 font-bold uppercase">Boutique Prestige</h3>
+        <p id="perkPoints" class="mb-2"></p>
+        <div id="perkList" class="space-y-2"></div>
+        <button
+          id="closePerkModal"
+          class="mt-4 px-4 py-2 border border-purple-500 rounded hover:bg-purple-800"
+        >
+          Fermer
+        </button>
       </div>
     </div>
 

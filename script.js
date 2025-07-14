@@ -4,20 +4,15 @@ let incomePerSec = 0;
 let prestigeCount = 0;
 let prestigeBonus = 1;
 
+let prestigePoints = 0;
+let unlockedPerks = [];
+
 let employees = {
   junior: 0,
   senior: 0,
   lead: 0,
   ai: 0,
   remote: 0,
-};
-
-const employeeSalaries = {
-  junior: 0.05,
-  senior: 0.5,
-  lead: 2,
-  ai: 10,
-  remote: 20,
 };
 
 let upgrades = {
@@ -37,12 +32,53 @@ let theme = "dark";
 
 let selectedProject = null;
 
+const employeeSalaries = {
+  junior: 0.05,
+  senior: 0.5,
+  lead: 2,
+  ai: 10,
+  remote: 20,
+};
+
+const availablePerks = [
+  {
+    id: "clickBoost",
+    name: "Boost Clic",
+    cost: 1,
+    desc: "+10% €/clic permanent",
+  },
+  {
+    id: "passiveBoost",
+    name: "Boost Passif",
+    cost: 1,
+    desc: "+10% €/sec permanent",
+  },
+  {
+    id: "eventLuck",
+    name: "Événements Positifs",
+    cost: 2,
+    desc: "+10% chance Hackathon",
+  },
+  {
+    id: "salaryReduction",
+    name: "Réduction Salaires",
+    cost: 3,
+    desc: "-10% sur salaires",
+  },
+  {
+    id: "bugImmunity",
+    name: "Production Stable",
+    cost: 2,
+    desc: "Immunité aux bugs critiques",
+  },
+];
+
 const projectsData = [
   {
     id: "site",
     name: "Site Vitrine",
     cost: 500,
-    duration: 60,
+    duration: 10,
     employees: { junior: 1 },
     reward: 1000,
   },
@@ -50,7 +86,7 @@ const projectsData = [
     id: "app",
     name: "App Mobile",
     cost: 5000,
-    duration: 120,
+    duration: 30,
     employees: { senior: 2 },
     reward: 12000,
   },
@@ -58,7 +94,7 @@ const projectsData = [
     id: "saas",
     name: "SaaS Complet",
     cost: 20000,
-    duration: 180,
+    duration: 60,
     employees: { lead: 1 },
     reward: 60000,
   },
@@ -71,9 +107,9 @@ const projectsData = [
     reward: 150000,
   },
 ];
+
 let activeProjects = {};
 
-// --------- Son effet ----------
 const clickSound = new Audio("click.mp3");
 clickSound.volume = 0.4;
 
@@ -91,6 +127,8 @@ if (localStorage.getItem("saveData")) {
   };
   upgrades = save.upgrades || { click: false, passive: false };
   prestigeCount = save.prestigeCount || 0;
+  prestigePoints = save.prestigePoints || 0;
+  unlockedPerks = save.unlockedPerks || [];
   matrixEnabled = save.matrixEnabled !== false;
   theme = save.theme || "dark";
   prestigeBonus = 1 + prestigeCount * 0.5;
@@ -117,22 +155,16 @@ const toggleThemeButton = document.getElementById("toggleThemeButton");
 const canvas = document.getElementById("backgroundCanvas");
 const ctx = canvas.getContext("2d");
 
-// ------------------ Journal de logs ------------------
-function addLog(message) {
-  const line = document.createElement("div");
-  line.textContent = message;
-  logConsole.appendChild(line);
-  logConsole.scrollTop = logConsole.scrollHeight;
-}
-
 // ------------------ UI & Thème ------------------
 function updateUI() {
   balanceEl.textContent = `💶 ${balance.toFixed(0)} €`;
+  let perkPassiveBonus = unlockedPerks.includes("passiveBoost") ? 1.1 : 1;
   incomeEl.textContent = `Revenu passif : ${(
     incomePerSec *
     passiveMultiplier *
     prestigeBonus *
-    eventModifier
+    eventModifier *
+    perkPassiveBonus
   ).toFixed(1)} €/sec`;
   prestigeEl.textContent = `Prestige : ${prestigeCount} (+${(
     (prestigeBonus - 1) *
@@ -192,6 +224,8 @@ function saveGame() {
     employees,
     upgrades,
     prestigeCount,
+    prestigePoints,
+    unlockedPerks,
     matrixEnabled,
     theme,
     activeProjects,
@@ -200,21 +234,19 @@ function saveGame() {
   showSaveNotice();
 }
 
-// ------------------ Effet +1€ animé ------------------
-function showClickEffect(text) {
-  const el = document.createElement("div");
-  el.textContent = text;
-  el.className = `
-    absolute left-1/2 transform -translate-x-1/2 text-green-400 font-bold
-    animate-fadeUp
-  `;
-  clickEffectsContainer.appendChild(el);
-  setTimeout(() => el.remove(), 1000);
+// ------------------ Log ------------------
+function addLog(message) {
+  const line = document.createElement("div");
+  line.textContent = message;
+  logConsole.appendChild(line);
+  logConsole.scrollTop = logConsole.scrollHeight;
 }
 
-// ------------------ Clic principal ------------------
+// ------------------ Click principal ------------------
 clickButton.addEventListener("click", () => {
-  const gain = 1 * clickMultiplier * prestigeBonus * eventModifier;
+  let perkClickBonus = unlockedPerks.includes("clickBoost") ? 1.1 : 1;
+  const gain =
+    1 * clickMultiplier * prestigeBonus * eventModifier * perkClickBonus;
   balance += gain;
   updateUI();
   showClickEffect(`+${gain.toFixed(0)} €`);
@@ -222,6 +254,34 @@ clickButton.addEventListener("click", () => {
   clickSound.play();
   addLog(`✅ Vous avez cliqué. +${gain.toFixed(0)} €`);
 });
+
+// ------------------ Revenus passifs automatiques ------------------
+setInterval(() => {
+  let perkPassiveBonus = unlockedPerks.includes("passiveBoost") ? 1.1 : 1;
+  balance +=
+    incomePerSec *
+    passiveMultiplier *
+    prestigeBonus *
+    eventModifier *
+    perkPassiveBonus;
+  paySalaries();
+  updateUI();
+  renderProjects();
+}, 1000);
+
+function paySalaries() {
+  let totalSalaries = 0;
+  for (let type in employees) {
+    totalSalaries += employees[type] * (employeeSalaries[type] || 0);
+  }
+  const salaryReduction = unlockedPerks.includes("salaryReduction") ? 0.9 : 1;
+  totalSalaries *= salaryReduction;
+
+  balance -= totalSalaries;
+  if (totalSalaries > 0) {
+    addLog(`💸 Salaires payés : -${totalSalaries.toFixed(2)} €`);
+  }
+}
 
 // ------------------ Achat employés ------------------
 employeeButtons.forEach((btn) => {
@@ -241,14 +301,6 @@ employeeButtons.forEach((btn) => {
     }
   });
 });
-
-// ------------------ Revenus passifs automatiques ------------------
-setInterval(() => {
-  balance += incomePerSec * passiveMultiplier * prestigeBonus * eventModifier;
-  paySalaries();
-  updateUI();
-  renderProjects();
-}, 1000);
 
 // ------------------ Achat upgrades ------------------
 upgradeButtons.forEach((btn) => {
@@ -273,6 +325,18 @@ upgradeButtons.forEach((btn) => {
   });
 });
 
+// ------------------ Effet +1€ animé ------------------
+function showClickEffect(text) {
+  const el = document.createElement("div");
+  el.textContent = text;
+  el.className = `
+    absolute left-1/2 transform -translate-x-1/2 text-green-400 font-bold
+    animate-fadeUp
+  `;
+  clickEffectsContainer.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
 // ------------------ Reset ------------------
 resetButton.addEventListener("click", () => {
   if (confirm("⚠️ Tu es sûr de vouloir tout réinitialiser ?")) {
@@ -285,6 +349,7 @@ resetButton.addEventListener("click", () => {
     prestigeBonus = 1 + prestigeCount * 0.5;
     eventModifier = 1;
     eventActive = false;
+    activeProjects = {};
     eventBanner.classList.add("hidden");
     localStorage.removeItem("saveData");
     updateUI();
@@ -294,12 +359,9 @@ resetButton.addEventListener("click", () => {
 
 // ------------------ Prestige ------------------
 prestigeButton.addEventListener("click", () => {
-  if (
-    confirm(
-      "✨ Tu vas tout réinitialiser mais gagner +50% de bonus permanent !"
-    )
-  ) {
+  if (confirm("✨ Tu vas tout réinitialiser mais gagner 1 Prestige Point !")) {
     prestigeCount += 1;
+    prestigePoints += 1;
     prestigeBonus = 1 + prestigeCount * 0.5;
     balance = 0;
     incomePerSec = 0;
@@ -309,6 +371,7 @@ prestigeButton.addEventListener("click", () => {
     passiveMultiplier = 1;
     eventModifier = 1;
     eventActive = false;
+    activeProjects = {};
     eventBanner.classList.add("hidden");
     saveGame();
     updateUI();
@@ -324,21 +387,34 @@ prestigeButton.addEventListener("click", () => {
 // ------------------ Events aléatoires ------------------
 function triggerRandomEvent() {
   if (eventActive) return;
+
+  let eventChance = 0.5;
+  if (unlockedPerks.includes("eventLuck")) {
+    eventChance += 0.1;
+  }
+
   const roll = Math.random();
-  if (roll < 0.5) return;
+  if (roll < eventChance) return;
+
   eventActive = true;
+
   if (roll < 0.75) {
-    eventModifier = 2;
-    eventBanner.textContent = "🚀 Hackathon ! Production x2 pendant 30s.";
-    eventBanner.classList.remove("hidden");
-    addLog("🚀 Hackathon déclenché !");
-  } else {
+    if (unlockedPerks.includes("bugImmunity")) {
+      eventActive = false;
+      return;
+    }
     eventModifier = 0.5;
     eventBanner.textContent =
       "⚠️ Bug Critique ! Production divisée par 2 pendant 30s.";
     eventBanner.classList.remove("hidden");
     addLog("⚠️ Bug Critique déclenché !");
+  } else {
+    eventModifier = 2;
+    eventBanner.textContent = "🚀 Hackathon ! Production x2 pendant 30s.";
+    eventBanner.classList.remove("hidden");
+    addLog("🚀 Hackathon déclenché !");
   }
+
   eventTimeout = setTimeout(() => {
     eventModifier = 1;
     eventActive = false;
@@ -401,6 +477,7 @@ window.addEventListener("resize", () => {
   canvas.height = height;
 });
 
+// ------------------ Save Notice ------------------
 function showSaveNotice() {
   const notice = document.getElementById("saveNotice");
   notice.classList.remove("hidden");
@@ -410,6 +487,7 @@ function showSaveNotice() {
   }, 2000);
 }
 
+// ------------------ Projets Clients avec stratégie ------------------
 function renderProjects() {
   const container = document.getElementById("projectList");
   container.innerHTML = "";
@@ -428,7 +506,7 @@ function renderProjects() {
       btn.textContent =
         remaining > 0
           ? `🛠️ ${project.name} en cours (${remaining}s)`
-          : `✅ ${project.name} - Livrer (+${project.reward} €)`;
+          : `✅ ${project.name} - Livrer (+reward)`;
     } else {
       btn.textContent = `📂 ${project.name} | ${project.cost} € | Gain: ${project.reward} €`;
     }
@@ -441,9 +519,7 @@ function renderProjects() {
 function handleProjectClick(project) {
   const state = activeProjects[project.id];
 
-  // Projet terminé ? On le livre
   if (state && Date.now() / 1000 >= state.end) {
-    // Résoudre avec échec / succès
     const roll = Math.random();
     if (state.mode === "safe") {
       balance += project.reward * 0.8;
@@ -476,7 +552,6 @@ function handleProjectClick(project) {
     return;
   }
 
-  // Projet pas encore en cours → il faut choisir une stratégie
   if (!state) {
     if (balance < project.cost) {
       addLog(`❌ Pas assez d'argent pour ${project.name}.`);
@@ -489,7 +564,6 @@ function handleProjectClick(project) {
       }
     }
 
-    // Ouvrir la modale UI au lieu du prompt
     selectedProject = project;
     document.getElementById(
       "strategyModalTitle"
@@ -499,18 +573,9 @@ function handleProjectClick(project) {
     ).textContent = `Coût : ${project.cost} € | Gain potentiel : ${project.reward} € | Durée : ${project.duration}s`;
     document.getElementById("strategyModal").classList.remove("hidden");
   }
-
-  balance -= project.cost;
-  activeProjects[project.id] = {
-    end: Math.floor(Date.now() / 1000) + project.duration,
-    mode,
-  };
-  addLog(
-    `🗂️ Projet démarré : ${project.name} en mode ${mode}. Durée ${project.duration}s.`
-  );
-  updateUI();
 }
 
+// ------------------ Choix stratégie UI ------------------
 document
   .getElementById("strategySafe")
   .addEventListener("click", () => chooseStrategy("safe"));
@@ -523,7 +588,6 @@ document
 
 function chooseStrategy(mode) {
   if (!selectedProject) return;
-
   if (balance < selectedProject.cost) {
     addLog(`❌ Pas assez d'argent pour ${selectedProject.name}.`);
     closeStrategyModal();
@@ -547,18 +611,43 @@ function closeStrategyModal() {
   selectedProject = null;
 }
 
-function paySalaries() {
-  let totalSalaries = 0;
-  for (let type in employees) {
-    totalSalaries += employees[type] * (employeeSalaries[type] || 0);
-  }
-  if (balance >= totalSalaries) {
-    balance -= totalSalaries;
-    if (totalSalaries > 0)
-      addLog(`💸 Salaires payés : -${totalSalaries.toFixed(2)} €`);
-  } else {
-    balance = 0;
-    addLog(`⚠️ Fonds insuffisants pour les salaires ! Vous êtes à sec.`);
+// ------------------ Boutique Prestige ------------------
+const perkModal = document.getElementById("perkModal");
+const perkList = document.getElementById("perkList");
+const perkPoints = document.getElementById("perkPoints");
+
+document.getElementById("openPerkShop").addEventListener("click", () => {
+  renderPerkShop();
+  perkModal.classList.remove("hidden");
+});
+
+document.getElementById("closePerkModal").addEventListener("click", () => {
+  perkModal.classList.add("hidden");
+});
+
+function renderPerkShop() {
+  perkPoints.textContent = `Points disponibles : ${prestigePoints}`;
+  perkList.innerHTML = "";
+
+  availablePerks.forEach((perk) => {
+    const btn = document.createElement("button");
+    btn.className = `w-full flex justify-between items-center px-4 py-2 bg-black border border-purple-600 hover:bg-purple-900 rounded text-purple-300 transition`;
+    btn.disabled =
+      unlockedPerks.includes(perk.id) || prestigePoints < perk.cost;
+    btn.innerHTML = `<span>${perk.name}</span><span>${perk.cost} PP - ${perk.desc}</span>`;
+    btn.addEventListener("click", () => buyPerk(perk));
+    perkList.appendChild(btn);
+  });
+}
+
+function buyPerk(perk) {
+  if (prestigePoints >= perk.cost && !unlockedPerks.includes(perk.id)) {
+    prestigePoints -= perk.cost;
+    unlockedPerks.push(perk.id);
+    addLog(`✨ Perk acheté : ${perk.name}`);
+    saveGame();
+    renderPerkShop();
+    updateUI();
   }
 }
 
