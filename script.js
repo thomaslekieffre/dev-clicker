@@ -12,6 +12,14 @@ let employees = {
   remote: 0,
 };
 
+const employeeSalaries = {
+  junior: 0.05,
+  senior: 0.5,
+  lead: 2,
+  ai: 10,
+  remote: 20,
+};
+
 let upgrades = {
   click: false,
   passive: false,
@@ -27,12 +35,14 @@ let eventTimeout = null;
 let matrixEnabled = true;
 let theme = "dark";
 
+let selectedProject = null;
+
 const projectsData = [
   {
     id: "site",
     name: "Site Vitrine",
     cost: 500,
-    duration: 10,
+    duration: 60,
     employees: { junior: 1 },
     reward: 1000,
   },
@@ -40,7 +50,7 @@ const projectsData = [
     id: "app",
     name: "App Mobile",
     cost: 5000,
-    duration: 30,
+    duration: 120,
     employees: { senior: 2 },
     reward: 12000,
   },
@@ -48,7 +58,7 @@ const projectsData = [
     id: "saas",
     name: "SaaS Complet",
     cost: 20000,
-    duration: 60,
+    duration: 180,
     employees: { lead: 1 },
     reward: 60000,
   },
@@ -235,6 +245,7 @@ employeeButtons.forEach((btn) => {
 // ------------------ Revenus passifs automatiques ------------------
 setInterval(() => {
   balance += incomePerSec * passiveMultiplier * prestigeBonus * eventModifier;
+  paySalaries();
   updateUI();
   renderProjects();
 }, 1000);
@@ -430,12 +441,47 @@ function renderProjects() {
 function handleProjectClick(project) {
   const state = activeProjects[project.id];
 
+  // Projet terminé ? On le livre
+  if (state && Date.now() / 1000 >= state.end) {
+    // Résoudre avec échec / succès
+    const roll = Math.random();
+    if (state.mode === "safe") {
+      balance += project.reward * 0.8;
+      addLog(`✅ Livraison Safe : +${(project.reward * 0.8).toFixed(0)} €.`);
+    } else if (state.mode === "normal") {
+      if (roll < 0.95) {
+        balance += project.reward;
+        addLog(`✅ Livraison Standard : +${project.reward} €.`);
+      } else {
+        balance += project.reward * 0.5;
+        addLog(
+          `⚠️ Bug en production ! Seulement +${(project.reward * 0.5).toFixed(
+            0
+          )} €.`
+        );
+      }
+    } else if (state.mode === "risky") {
+      if (roll < 0.5) {
+        balance += project.reward * 1.5;
+        addLog(`🚀 Livraison Risky : +${(project.reward * 1.5).toFixed(0)} €.`);
+      } else {
+        balance += project.reward * 0.25;
+        addLog(
+          `💥 Échec Risky ! Seulement +${(project.reward * 0.25).toFixed(0)} €.`
+        );
+      }
+    }
+    delete activeProjects[project.id];
+    updateUI();
+    return;
+  }
+
+  // Projet pas encore en cours → il faut choisir une stratégie
   if (!state) {
     if (balance < project.cost) {
       addLog(`❌ Pas assez d'argent pour ${project.name}.`);
       return;
     }
-
     for (const type in project.employees) {
       if ((employees[type] || 0) < project.employees[type]) {
         addLog(`❌ Pas assez d'employés pour ${project.name}.`);
@@ -443,18 +489,77 @@ function handleProjectClick(project) {
       }
     }
 
-    balance -= project.cost;
-    activeProjects[project.id] = {
-      end: Math.floor(Date.now() / 1000) + project.duration,
-    };
-    addLog(`🗂️ Projet démarré : ${project.name}. Durée ${project.duration}s.`);
-  } else if (Date.now() / 1000 >= state.end) {
-    balance += project.reward;
-    delete activeProjects[project.id];
-    addLog(`✅ Projet livré : ${project.name}. Gain +${project.reward} €.`);
+    // Ouvrir la modale UI au lieu du prompt
+    selectedProject = project;
+    document.getElementById(
+      "strategyModalTitle"
+    ).textContent = `Choisir une stratégie pour ${project.name}`;
+    document.getElementById(
+      "strategyModalDesc"
+    ).textContent = `Coût : ${project.cost} € | Gain potentiel : ${project.reward} € | Durée : ${project.duration}s`;
+    document.getElementById("strategyModal").classList.remove("hidden");
   }
 
+  balance -= project.cost;
+  activeProjects[project.id] = {
+    end: Math.floor(Date.now() / 1000) + project.duration,
+    mode,
+  };
+  addLog(
+    `🗂️ Projet démarré : ${project.name} en mode ${mode}. Durée ${project.duration}s.`
+  );
   updateUI();
+}
+
+document
+  .getElementById("strategySafe")
+  .addEventListener("click", () => chooseStrategy("safe"));
+document
+  .getElementById("strategyNormal")
+  .addEventListener("click", () => chooseStrategy("normal"));
+document
+  .getElementById("strategyRisky")
+  .addEventListener("click", () => chooseStrategy("risky"));
+
+function chooseStrategy(mode) {
+  if (!selectedProject) return;
+
+  if (balance < selectedProject.cost) {
+    addLog(`❌ Pas assez d'argent pour ${selectedProject.name}.`);
+    closeStrategyModal();
+    return;
+  }
+
+  balance -= selectedProject.cost;
+  activeProjects[selectedProject.id] = {
+    end: Math.floor(Date.now() / 1000) + selectedProject.duration,
+    mode,
+  };
+  addLog(
+    `🗂️ Projet démarré : ${selectedProject.name} en mode ${mode}. Durée ${selectedProject.duration}s.`
+  );
+  updateUI();
+  closeStrategyModal();
+}
+
+function closeStrategyModal() {
+  document.getElementById("strategyModal").classList.add("hidden");
+  selectedProject = null;
+}
+
+function paySalaries() {
+  let totalSalaries = 0;
+  for (let type in employees) {
+    totalSalaries += employees[type] * (employeeSalaries[type] || 0);
+  }
+  if (balance >= totalSalaries) {
+    balance -= totalSalaries;
+    if (totalSalaries > 0)
+      addLog(`💸 Salaires payés : -${totalSalaries.toFixed(2)} €`);
+  } else {
+    balance = 0;
+    addLog(`⚠️ Fonds insuffisants pour les salaires ! Vous êtes à sec.`);
+  }
 }
 
 // ------------------ Démarrage ------------------
