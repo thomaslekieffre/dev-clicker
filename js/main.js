@@ -16,6 +16,9 @@ import { state } from "./state.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
+  recalculateIncome();
+
+  import { recalculateIncome } from "./employees.js";
 
   if (state.theme === "dark") enableDarkTheme();
   else enableLightTheme();

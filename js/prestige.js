@@ -1,6 +1,7 @@
 import { state } from "./state.js";
 import { saveGame } from "./storage.js";
 import { addLog, updateUI } from "./ui.js";
+import { recalculateIncome } from "./employees.js";
 
 export function setupPrestige() {
   document.getElementById("prestigeButton").addEventListener("click", () => {
@@ -28,6 +29,7 @@ export function setupPrestige() {
 }
 
 function hardReset(keepPrestige = false) {
+  recalculateIncome();
   state.balance = 0;
   state.incomePerSec = 0;
   state.employees = { junior: 0, senior: 0, lead: 0, ai: 0, remote: 0 };

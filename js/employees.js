@@ -12,6 +12,7 @@ export function setupEmployees() {
         state.balance -= cost;
         state.incomePerSec += income;
         state.employees[type] += 1;
+        recalculateIncome();
         updateUI();
         addLog(
           `🛠️ Employé acheté : ${btn.querySelector("span").textContent.trim()}`
@@ -30,4 +31,30 @@ export function paySalaries() {
   total *= reduction;
   state.balance -= total;
   if (total > 0) addLog(`💸 Salaires payés : -${total.toFixed(2)} €`);
+}
+
+export function recalculateIncome() {
+  state.incomePerSec = 0;
+  for (let type in state.employees) {
+    const count = state.employees[type];
+    const baseIncome = getIncomeForType(type);
+    state.incomePerSec += count * baseIncome;
+  }
+}
+
+function getIncomeForType(type) {
+  switch (type) {
+    case "junior":
+      return 0.1;
+    case "senior":
+      return 1;
+    case "lead":
+      return 10;
+    case "ai":
+      return 100;
+    case "remote":
+      return 1000;
+    default:
+      return 0;
+  }
 }
