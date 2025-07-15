@@ -7,7 +7,7 @@ import {
   drawMatrix,
 } from "./ui.js";
 import { setupClick } from "./click.js";
-import { setupEmployees, paySalaries } from "./employees.js";
+import { setupEmployees, paySalaries, recalculateIncome } from "./employees.js";
 import { setupUpgrades } from "./upgrades.js";
 import { renderProjects, setupStrategyModal } from "./projects.js";
 import { triggerRandomEvent } from "./events.js";
@@ -17,8 +17,6 @@ import { state } from "./state.js";
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   recalculateIncome();
-
-  import { recalculateIncome } from "./employees.js";
 
   if (state.theme === "dark") enableDarkTheme();
   else enableLightTheme();
