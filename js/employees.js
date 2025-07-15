@@ -40,7 +40,7 @@ export function paySalaries() {
 export function recalculateIncome() {
   state.incomePerSec = 0;
   for (let type in state.employees) {
-    const count = state.employees[type];
+    const count = state.employees[type] || 0;
     const baseIncome = getIncomeForType(type);
     state.incomePerSec += count * baseIncome;
   }

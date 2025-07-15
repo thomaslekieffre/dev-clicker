@@ -11,5 +11,6 @@ export function loadGame() {
     state.prestigeBonus = 1 + state.prestigeCount * 0.5;
     if (state.upgrades.click) state.clickMultiplier = 1.2;
     if (state.upgrades.passive) state.passiveMultiplier = 1.2;
+    state.bugs = state.bugs || [];
   }
 }

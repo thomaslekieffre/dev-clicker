@@ -14,11 +14,13 @@ import { triggerRandomEvent } from "./events.js";
 import { setupPrestige, setupPerkShop } from "./prestige.js";
 import { state } from "./state.js";
 import { setupDocumentation } from "./doc.js";
+import { setupBugSystem, renderBugList } from "./bugs.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   recalculateIncome();
   setupDocumentation();
+  setupBugSystem();
 
   if (state.theme === "dark") enableDarkTheme();
   else enableLightTheme();

@@ -1,5 +1,6 @@
 import { state } from "./state.js";
 import { saveGame } from "./storage.js";
+import { renderBugList } from "./bugs.js";
 
 export function enableDarkTheme() {
   document.body.classList.remove("bg-white", "text-black");
@@ -78,6 +79,8 @@ export function updateUI() {
 
   document.getElementById("backgroundCanvas").style.display =
     state.matrixEnabled ? "block" : "none";
+
+  renderBugList(document.getElementById("bugList"));
 
   applyThemeStyles();
   updateToggleButtons();

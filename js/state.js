@@ -124,4 +124,5 @@ export let state = {
       text: "🌍 Les équipes Remote coûtent cher mais rapportent beaucoup.",
     },
   ],
+  bugs: [],
 };
