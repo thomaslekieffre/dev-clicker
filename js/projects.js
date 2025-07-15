@@ -31,6 +31,11 @@ export function renderProjects() {
 
 function handleProjectClick(project) {
   const stateProject = state.activeProjects[project.id];
+  const blockingBug = state.bugs.find((b) => b.active && b.type === "blocking");
+  if (blockingBug) {
+    addLog(`❌ Impossible de lancer un projet : ${blockingBug.description}`);
+    return;
+  }
 
   if (stateProject && Date.now() / 1000 >= stateProject.end) {
     const roll = Math.random();

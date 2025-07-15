@@ -2,6 +2,8 @@ import { state } from "./state.js";
 import { addLog, updateUI, showSaveNotice } from "./ui.js";
 import { saveGame } from "./storage.js";
 
+const BUG_FIX_COST = 100;
+
 export function setupBugSystem() {
   // Vérifie toutes les 45 secondes si un bug apparaît
   setInterval(() => {
@@ -41,18 +43,25 @@ function tryTriggerBug() {
 
 export function resolveBug(bugId) {
   const bug = state.bugs.find((b) => b.id === bugId);
-  if (!bug) return;
+  if (!bug || !bug.active) return;
+
+  if (state.balance < BUG_FIX_COST) {
+    addLog(
+      `❌ Pas assez d'argent pour résoudre le bug (coût ${BUG_FIX_COST} €).`
+    );
+    return;
+  }
+
+  state.balance -= BUG_FIX_COST;
 
   if (bug.type === "critical") {
-    state.eventModifier *= 2;
+    state.eventModifier *= 2; // rétablit la prod
   }
 
   bug.active = false;
-  addLog(`✅ Bug résolu : ${bug.description}`);
-
+  addLog(`✅ Bug résolu : ${bug.description} (-${BUG_FIX_COST} €)`);
   saveGame();
   updateUI();
-  showSaveNotice();
 }
 
 export function renderBugList(container) {
@@ -68,7 +77,7 @@ export function renderBugList(container) {
     const btn = document.createElement("button");
     btn.className =
       "w-full flex justify-between items-center px-4 py-2 bg-black border border-red-600 hover:bg-red-900 rounded shadow text-red-300 transition btn-theme";
-    btn.textContent = `🐞 ${bug.description} - Résoudre`;
+    btn.textContent = `🐞 ${bug.description} - Résoudre (${BUG_FIX_COST} €)`;
     btn.addEventListener("click", () => resolveBug(bug.id));
     container.appendChild(btn);
   });
