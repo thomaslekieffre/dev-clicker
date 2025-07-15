@@ -13,10 +13,12 @@ import { renderProjects, setupStrategyModal } from "./projects.js";
 import { triggerRandomEvent } from "./events.js";
 import { setupPrestige, setupPerkShop } from "./prestige.js";
 import { state } from "./state.js";
+import { setupDocumentation } from "./doc.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   recalculateIncome();
+  setupDocumentation();
 
   if (state.theme === "dark") enableDarkTheme();
   else enableLightTheme();

@@ -97,4 +97,31 @@ export let state = {
       desc: "Immunité aux bugs critiques",
     },
   ],
+  tipsUnlocked: [],
+  allTips: [
+    {
+      id: "salary",
+      text: "💸 Les salaires sont payés chaque seconde. Planifie tes coûts !",
+    },
+    {
+      id: "risk",
+      text: "⚠️ Les projets Risky peuvent te ruiner ou te rendre riche.",
+    },
+    {
+      id: "perks",
+      text: "✨ Utilise tes points de prestige pour acheter des perks stratégiques.",
+    },
+    {
+      id: "bugs",
+      text: "🐞 Les événements critiques réduisent ta production.",
+    },
+    {
+      id: "matrix",
+      text: "🌌 Le fond Matrix est purement esthétique. Mais il en impose.",
+    },
+    {
+      id: "remote",
+      text: "🌍 Les équipes Remote coûtent cher mais rapportent beaucoup.",
+    },
+  ],
 };
