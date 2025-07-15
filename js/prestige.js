@@ -30,7 +30,7 @@ export function setupPrestige() {
 
 function hardReset(keepPrestige = false) {
   recalculateIncome();
-  state.balance = 0;
+  state.balance = 5000;
   state.incomePerSec = 0;
   state.employees = { junior: 0, senior: 0, lead: 0, ai: 0, remote: 0 };
   state.upgrades = { click: false, passive: false };

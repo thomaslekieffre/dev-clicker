@@ -5,21 +5,33 @@ export function renderProjects() {
   const container = document.getElementById("projectList");
   container.innerHTML = "";
 
+  console.log("state.projectsData =", state.projectsData);
+
   state.projectsData.forEach((project) => {
+    if (!project.steps || !project.steps.length) {
+      console.warn("⚠️ Ignoré car steps manquant ou vide :", project);
+      return;
+    }
+
     const btn = document.createElement("button");
     btn.className =
       "w-full flex justify-between items-center px-4 py-2 bg-black border border-green-600 hover:bg-green-900 rounded shadow text-green-300 transition";
     btn.id = `project-${project.id}`;
 
-    if (state.activeProjects[project.id]) {
-      const remaining = Math.max(
-        0,
-        Math.ceil(state.activeProjects[project.id].end - Date.now() / 1000)
-      );
-      btn.textContent =
-        remaining > 0
-          ? `🛠️ ${project.name} en cours (${remaining}s)`
-          : `✅ ${project.name} - Livrer (+reward)`;
+    const stateProject = state.activeProjects[project.id];
+
+    if (stateProject) {
+      if (stateProject.currentStep >= project.steps.length) {
+        btn.textContent = `✅ ${project.name} - Livrer (+${project.reward} €)`;
+      } else {
+        const remaining = Math.max(
+          0,
+          Math.ceil(stateProject.end - Date.now() / 1000)
+        );
+        const currentStep = project.steps[stateProject.currentStep];
+        const stepName = currentStep ? currentStep.name : "???";
+        btn.textContent = `🛠️ ${project.name} ➜ ${stepName} (${remaining}s)`;
+      }
     } else {
       btn.textContent = `📂 ${project.name} | ${project.cost} € | Gain: ${project.reward} €`;
     }
@@ -30,61 +42,102 @@ export function renderProjects() {
 }
 
 function handleProjectClick(project) {
-  const stateProject = state.activeProjects[project.id];
+  console.log("CLICKED PROJECT", project);
+
   const blockingBug = state.bugs.find((b) => b.active && b.type === "blocking");
   if (blockingBug) {
-    addLog(`❌ Impossible de lancer un projet : ${blockingBug.description}`);
+    addLog(`❌ Impossible de lancer ou avancer : ${blockingBug.description}`);
     return;
   }
 
-  if (stateProject && Date.now() / 1000 >= stateProject.end) {
-    const roll = Math.random();
-    if (stateProject.mode === "safe") {
-      state.balance += project.reward * 0.8;
-      addLog(`✅ Livraison Safe : +${(project.reward * 0.8).toFixed(0)} €.`);
-    } else if (stateProject.mode === "normal") {
-      if (roll < 0.95) {
-        state.balance += project.reward;
-        addLog(`✅ Livraison Standard : +${project.reward} €.`);
-      } else {
-        state.balance += project.reward * 0.5;
-        addLog(
-          `⚠️ Bug en production ! +${(project.reward * 0.5).toFixed(0)} €.`
-        );
-      }
-    } else if (stateProject.mode === "risky") {
-      if (roll < 0.5) {
-        state.balance += project.reward * 1.5;
-        addLog(`🚀 Livraison Risky : +${(project.reward * 1.5).toFixed(0)} €.`);
-      } else {
-        state.balance += project.reward * 0.25;
-        addLog(`💥 Échec Risky ! +${(project.reward * 0.25).toFixed(0)} €.`);
-      }
+  if (!project.steps || !project.steps.length) {
+    addLog(
+      `❌ Projet mal configuré : ${project.name} n'a pas d'étapes définies.`
+    );
+    return;
+  }
+
+  const stateProject = state.activeProjects[project.id];
+
+  // ✅ Livraison finale
+  if (stateProject && stateProject.currentStep >= project.steps.length) {
+    let reward = project.reward;
+    const mode = stateProject.mode || "normal";
+
+    if (mode === "safe") {
+      reward = Math.floor(reward * 0.9);
+    } else if (mode === "risky") {
+      reward = Math.floor(reward * 1.5);
     }
+
+    state.balance += reward;
     delete state.activeProjects[project.id];
+
+    addLog(
+      `✅ Projet livré : ${project.name} en mode ${mode}. Gain +${reward} €.`
+    );
     updateUI();
     return;
   }
 
+  // ✅ Nouveau lancement → ouvrir la modal de stratégie
   if (!stateProject) {
     if (state.balance < project.cost) {
       addLog(`❌ Pas assez d'argent pour ${project.name}.`);
       return;
     }
+
     for (const type in project.employees) {
       if ((state.employees[type] || 0) < project.employees[type]) {
         addLog(`❌ Pas assez d'employés pour ${project.name}.`);
         return;
       }
     }
+
     state.selectedProject = project;
-    document.getElementById(
-      "strategyModalTitle"
-    ).textContent = `Choisir une stratégie pour ${project.name}`;
-    document.getElementById(
-      "strategyModalDesc"
-    ).textContent = `Coût : ${project.cost} € | Gain : ${project.reward} € | Durée : ${project.duration}s`;
     document.getElementById("strategyModal").classList.remove("hidden");
+    addLog(`✅ Choisissez la stratégie pour ${project.name}.`);
+    return;
+  }
+
+  // ✅ Avancement des étapes
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= stateProject.end) {
+    if (stateProject.currentStep >= project.steps.length) {
+      addLog(
+        `✅ ${project.name} est déjà prêt à être livré. Cliquez pour finaliser !`
+      );
+      return;
+    }
+
+    stateProject.currentStep += 1;
+
+    // ✅ Vérification d'échec en fonction du mode
+    const mode = stateProject.mode || "normal";
+    const failChance = mode === "safe" ? 0 : mode === "normal" ? 10 : 50;
+    const randomRoll = Math.random() * 100;
+
+    if (randomRoll < failChance) {
+      delete state.activeProjects[project.id];
+      addLog(
+        `❌ Le projet ${project.name} en mode ${mode} a échoué à l'étape ${stateProject.currentStep}! Vous avez perdu l'investissement.`
+      );
+      updateUI();
+      return;
+    }
+
+    if (stateProject.currentStep < project.steps.length) {
+      const nextStep = project.steps[stateProject.currentStep];
+      stateProject.end = now + nextStep.duration;
+      addLog(
+        `🛠️ ${project.name} ➜ Étape suivante : ${nextStep.name}. Durée ${nextStep.duration}s.`
+      );
+    } else {
+      addLog(`✅ ${project.name} prêt à être livré. Cliquez pour finaliser !`);
+    }
+    updateUI();
+  } else {
+    addLog(`⏳ ${project.name} est encore en cours. Patientez.`);
   }
 }
 
@@ -104,6 +157,14 @@ function chooseStrategy(mode) {
   const project = state.selectedProject;
   if (!project) return;
 
+  if (!project.steps || !project.steps.length) {
+    addLog(
+      `❌ Impossible de démarrer : ${project.name} n'a pas d'étapes définies.`
+    );
+    closeStrategyModal();
+    return;
+  }
+
   if (state.balance < project.cost) {
     addLog(`❌ Pas assez d'argent pour ${project.name}.`);
     closeStrategyModal();
@@ -111,12 +172,15 @@ function chooseStrategy(mode) {
   }
 
   state.balance -= project.cost;
+
   state.activeProjects[project.id] = {
-    end: Math.floor(Date.now() / 1000) + project.duration,
+    currentStep: 0,
+    end: Math.floor(Date.now() / 1000) + project.steps[0].duration,
     mode,
   };
+
   addLog(
-    `🗂️ Projet démarré : ${project.name} en mode ${mode}. Durée ${project.duration}s.`
+    `🗂️ Projet démarré : ${project.name} en mode ${mode}. Étape ${project.steps[0].name}. Durée ${project.steps[0].duration}s.`
   );
   updateUI();
   closeStrategyModal();
