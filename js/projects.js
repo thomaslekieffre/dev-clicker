@@ -1,5 +1,6 @@
 import { state } from "./state.js";
 import { addLog, updateUI } from "./ui.js";
+import { checkAchievements } from "./achievements.js";
 
 export function renderProjects() {
   const container = document.getElementById("projectList");
@@ -72,6 +73,8 @@ function handleProjectClick(project) {
 
     state.balance += reward;
     delete state.activeProjects[project.id];
+    state.deliveredProjectsCount += 1;
+    checkAchievements();
 
     addLog(
       `✅ Projet livré : ${project.name} en mode ${mode}. Gain +${reward} €.`

@@ -84,6 +84,7 @@ export function updateUI() {
 
   applyThemeStyles();
   updateToggleButtons();
+  renderAchievements();
   saveGame();
 }
 
@@ -130,4 +131,17 @@ export function drawMatrix(ctx, theme, width, height, drops, fontSize) {
     }
     drops[i]++;
   }
+}
+
+export function renderAchievements() {
+  const container = document.getElementById("achievementsList");
+  container.innerHTML = "";
+  state.achievements.forEach((ach) => {
+    const div = document.createElement("div");
+    div.className = ach.unlocked
+      ? "border border-green-500 px-2 py-1 rounded text-green-300"
+      : "border border-green-800 px-2 py-1 rounded text-green-700 opacity-50";
+    div.textContent = `🏅 ${ach.title} - ${ach.desc}`;
+    container.appendChild(div);
+  });
 }

@@ -17,6 +17,7 @@ export let state = {
   },
   clickMultiplier: 1,
   passiveMultiplier: 1,
+  deliveredProjectsCount: 0,
   unlockedPerks: [],
   eventActive: false,
   eventModifier: 1,
@@ -133,4 +134,36 @@ export let state = {
     },
   ],
   bugs: [],
+  achievements: [
+    {
+      id: "firstThousand",
+      title: "Premier Millier",
+      desc: "Atteindre 1000 €",
+      unlocked: false,
+    },
+    {
+      id: "hire10",
+      title: "Manager",
+      desc: "Embaucher 10 employés",
+      unlocked: false,
+    },
+    {
+      id: "deliver5",
+      title: "Livraison Express",
+      desc: "Livrer 5 projets clients",
+      unlocked: false,
+    },
+    {
+      id: "prestige1",
+      title: "Nouveau Départ",
+      desc: "Faire un prestige",
+      unlocked: false,
+    },
+    {
+      id: "buyUpgrade",
+      title: "Tech Upgrade",
+      desc: "Acheter une amélioration",
+      unlocked: false,
+    },
+  ],
 };

@@ -2,6 +2,7 @@ import { state } from "./state.js";
 import { saveGame } from "./storage.js";
 import { addLog, updateUI } from "./ui.js";
 import { recalculateIncome } from "./employees.js";
+import { checkAchievements } from "./achievements.js";
 
 export function setupPrestige() {
   document.getElementById("prestigeButton").addEventListener("click", () => {
@@ -18,6 +19,7 @@ export function setupPrestige() {
         ).toFixed(0)} %`
       );
     }
+    checkAchievements();
   });
 
   document.getElementById("resetButton").addEventListener("click", () => {

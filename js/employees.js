@@ -2,6 +2,7 @@ import { state } from "./state.js";
 import { addLog, updateUI } from "./ui.js";
 import { unlockTip } from "./doc.js";
 import { saveGame } from "./storage.js";
+import { checkAchievements } from "./achievements.js";
 
 export function setupEmployees() {
   document.querySelectorAll(".employee-btn").forEach((btn) => {
@@ -20,6 +21,7 @@ export function setupEmployees() {
           `🛠️ Employé acheté : ${btn.querySelector("span").textContent.trim()}`
         );
         if (type === "remote") unlockTip("remote");
+        checkAchievements();
         saveGame();
       }
     });

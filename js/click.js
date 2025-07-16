@@ -1,5 +1,6 @@
 import { state } from "./state.js";
 import { addLog, showClickEffect, updateUI } from "./ui.js";
+import { checkAchievements } from "./achievements.js";
 
 export function setupClick() {
   const clickButton = document.getElementById("clickButton");
@@ -20,5 +21,6 @@ export function setupClick() {
     clickSound.currentTime = 0;
     clickSound.play();
     addLog(`✅ Vous avez cliqué. +${gain.toFixed(0)} €`);
+    checkAchievements();
   });
 }
