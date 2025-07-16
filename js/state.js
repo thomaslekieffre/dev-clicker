@@ -4,6 +4,7 @@ export let state = {
   prestigeCount: 0,
   prestigePoints: 0,
   prestigeBonus: 1,
+
   employees: {
     junior: 0,
     senior: 0,
@@ -11,10 +12,12 @@ export let state = {
     ai: 0,
     remote: 0,
   },
+
   upgrades: {
     click: false,
     passive: false,
   },
+
   clickMultiplier: 1,
   passiveMultiplier: 1,
   deliveredProjectsCount: 0,
@@ -25,45 +28,83 @@ export let state = {
   theme: "dark",
   selectedProject: null,
   activeProjects: {},
+  bugs: [],
+
+  // ✅ Projets NORMAUX (disponibles au début)
   projectsData: [
     {
       id: "site",
       name: "Site Vitrine",
+      cost: 500,
+      reward: 1000,
+      employees: { junior: 1 },
       steps: [
         { name: "Design", duration: 5 },
         { name: "Dev", duration: 10 },
         { name: "Test", duration: 5 },
         { name: "Deploy", duration: 3 },
       ],
-      cost: 500,
-      employees: { junior: 1 },
-      reward: 1000,
+      isVIP: false,
     },
     {
       id: "app",
       name: "App Mobile",
+      cost: 5000,
+      reward: 12000,
+      employees: { senior: 2 },
       steps: [
         { name: "Design", duration: 8 },
         { name: "Dev", duration: 20 },
         { name: "Test", duration: 10 },
         { name: "Deploy", duration: 5 },
       ],
-      cost: 5000,
-      employees: { senior: 2 },
-      reward: 12000,
+      isVIP: false,
     },
     {
       id: "saas",
       name: "SaaS Complet",
+      cost: 20000,
+      reward: 60000,
+      employees: { lead: 1 },
       steps: [
         { name: "Design", duration: 12 },
         { name: "Dev", duration: 30 },
         { name: "Test", duration: 15 },
         { name: "Deploy", duration: 8 },
       ],
-      cost: 20000,
-      employees: { lead: 1 },
-      reward: 60000,
+      isVIP: false,
+    },
+  ],
+
+  // ✅ Projets VIP (non dispos au départ)
+  vipProjects: [
+    {
+      id: "vipEcommerce",
+      name: "🌟 E-commerce International (VIP)",
+      cost: 40000,
+      reward: 100000,
+      employees: { lead: 2, ai: 1 },
+      steps: [
+        { name: "Design", duration: 20 },
+        { name: "Dev", duration: 40 },
+        { name: "Test", duration: 25 },
+        { name: "Deploy", duration: 10 },
+      ],
+      isVIP: true,
+    },
+    {
+      id: "vipAppEnterprise",
+      name: "🌟 App Mobile Enterprise (VIP)",
+      cost: 70000,
+      reward: 250000,
+      employees: { lead: 3, ai: 2, remote: 1 },
+      steps: [
+        { name: "Design", duration: 40 },
+        { name: "Dev", duration: 60 },
+        { name: "Test", duration: 40 },
+        { name: "Deploy", duration: 20 },
+      ],
+      isVIP: true,
     },
   ],
 
@@ -74,6 +115,7 @@ export let state = {
     ai: 10,
     remote: 20,
   },
+
   availablePerks: [
     {
       id: "clickBoost",
@@ -106,6 +148,7 @@ export let state = {
       desc: "Immunité aux bugs critiques",
     },
   ],
+
   tipsUnlocked: [],
   allTips: [
     {
@@ -133,7 +176,7 @@ export let state = {
       text: "🌍 Les équipes Remote coûtent cher mais rapportent beaucoup.",
     },
   ],
-  bugs: [],
+
   achievements: [
     {
       id: "firstThousand",

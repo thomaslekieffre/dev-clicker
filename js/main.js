@@ -48,10 +48,14 @@ document.addEventListener("DOMContentLoaded", () => {
       state.prestigeBonus *
       state.eventModifier *
       perkPassiveBonus;
-    paySalaries();
     updateUI();
     renderProjects();
   }, 1000);
+
+  // Salaries tick
+  setInterval(() => {
+    paySalaries();
+  }, 3000);
 
   // Events tick
   setInterval(() => {

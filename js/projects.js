@@ -1,12 +1,11 @@
 import { state } from "./state.js";
 import { addLog, updateUI } from "./ui.js";
 import { checkAchievements } from "./achievements.js";
+import { trySpawnVIP } from "./vip.js";
 
 export function renderProjects() {
   const container = document.getElementById("projectList");
   container.innerHTML = "";
-
-  console.log("state.projectsData =", state.projectsData);
 
   state.projectsData.forEach((project) => {
     if (!project.steps || !project.steps.length) {
@@ -20,6 +19,7 @@ export function renderProjects() {
     btn.id = `project-${project.id}`;
 
     const stateProject = state.activeProjects[project.id];
+    let label = project.isVIP ? `🌟 ${project.name}` : `📂 ${project.name}`;
 
     if (stateProject) {
       if (stateProject.currentStep >= project.steps.length) {
@@ -34,7 +34,7 @@ export function renderProjects() {
         btn.textContent = `🛠️ ${project.name} ➜ ${stepName} (${remaining}s)`;
       }
     } else {
-      btn.textContent = `📂 ${project.name} | ${project.cost} € | Gain: ${project.reward} €`;
+      btn.textContent = `${label} | ${project.cost} € | Gain: ${project.reward} €`;
     }
 
     btn.addEventListener("click", () => handleProjectClick(project));
@@ -43,8 +43,6 @@ export function renderProjects() {
 }
 
 function handleProjectClick(project) {
-  console.log("CLICKED PROJECT", project);
-
   const blockingBug = state.bugs.find((b) => b.active && b.type === "blocking");
   if (blockingBug) {
     addLog(`❌ Impossible de lancer ou avancer : ${blockingBug.description}`);
@@ -72,9 +70,20 @@ function handleProjectClick(project) {
     }
 
     state.balance += reward;
+    // ✅ Si c'est un projet VIP ➜ on le retire définitivement
+    if (project.isVIP) {
+      state.projectsData = state.projectsData.filter(
+        (p) => p.id !== project.id
+      );
+      addLog(
+        `🌟 Le projet VIP "${project.name}" est terminé. Il pourra revenir plus tard.`
+      );
+    }
+
     delete state.activeProjects[project.id];
     state.deliveredProjectsCount += 1;
     checkAchievements();
+    trySpawnVIP();
 
     addLog(
       `✅ Projet livré : ${project.name} en mode ${mode}. Gain +${reward} €.`
