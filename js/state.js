@@ -209,4 +209,10 @@ export let state = {
       unlocked: false,
     },
   ],
+  stats: {
+    totalMoneyEarned: 0,
+    projectsDelivered: 0,
+    vipProjectsDelivered: 0,
+    playTimeSeconds: 0,
+  },
 };

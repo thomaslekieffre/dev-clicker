@@ -82,6 +82,12 @@ function handleProjectClick(project) {
 
     delete state.activeProjects[project.id];
     state.deliveredProjectsCount += 1;
+    state.stats.totalMoneyEarned += reward;
+    state.stats.projectsDelivered += 1;
+    if (project.isVIP) {
+      state.stats.vipProjectsDelivered += 1;
+    }
+
     checkAchievements();
     trySpawnVIP();
 

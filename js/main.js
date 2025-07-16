@@ -15,12 +15,14 @@ import { setupPrestige, setupPerkShop } from "./prestige.js";
 import { state } from "./state.js";
 import { setupDocumentation } from "./doc.js";
 import { setupBugSystem, renderBugList } from "./bugs.js";
+import { setupStatsModal } from "./stats.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   recalculateIncome();
   setupDocumentation();
   setupBugSystem();
+  setupStatsModal();
 
   if (state.theme === "dark") enableDarkTheme();
   else enableLightTheme();
@@ -37,17 +39,27 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUI();
   renderProjects();
 
+  setInterval(() => {
+    state.stats.playTimeSeconds += 1;
+    saveGame();
+  }, 1000);
+
   // Income tick
   setInterval(() => {
     let perkPassiveBonus = state.unlockedPerks.includes("passiveBoost")
       ? 1.1
       : 1;
-    state.balance +=
+
+    const passiveIncome =
       state.incomePerSec *
       state.passiveMultiplier *
       state.prestigeBonus *
       state.eventModifier *
       perkPassiveBonus;
+
+    state.balance += passiveIncome;
+    state.stats.totalMoneyEarned += passiveIncome;
+
     updateUI();
     renderProjects();
   }, 1000);

@@ -16,6 +16,7 @@ export function setupClick() {
       state.eventModifier *
       perkClickBonus;
     state.balance += gain;
+    state.stats.totalMoneyEarned += gain;
     updateUI();
     showClickEffect(`+${gain.toFixed(0)} €`);
     clickSound.currentTime = 0;
